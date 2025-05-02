@@ -21,6 +21,7 @@ cd backend
 poetry install
 cp .env.example .env
 poetry run uvicorn app.main:app --reload
+```
 
 ### Frontend
 ```bash
@@ -28,3 +29,4 @@ cd frontend
 npm install
 npm run dev
 ```
+
