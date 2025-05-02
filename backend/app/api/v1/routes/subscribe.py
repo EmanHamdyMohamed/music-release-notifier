@@ -12,11 +12,6 @@ async def subscribe(user: UserIn):
         update_fields = {
             "subscribed_artists": [a.dict() for a in user.subscribed_artists]
         }
-        # updates = {
-        #     "$set": {
-        #         "subscribed_artists": [a.dict() for a in user.subscribed_artists]
-        #     }
-        # }
         if user.notification_methods:
             update_fields["notification_methods"] = user.notification_methods
         if user.telegram_chat_id:
@@ -24,15 +19,10 @@ async def subscribe(user: UserIn):
         if user.phone_number:
             update_fields["phone_number"] = user.phone_number
 
-        # if update_fields:
-        #     updates["$set"] = update_fields            
-
-        # Update the user's subscriptions
         await db.users.update_one({"email": user.email}, {
             "$set": update_fields
         })
     else:
-        # Create new user with subscriptions
         await db.users.insert_one(user.dict())
 
     return {"message": "Subscription updated"}
