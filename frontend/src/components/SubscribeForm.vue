@@ -62,7 +62,7 @@ const getSubscription = async () => {
     return
   }
   try {
-    console.log('config.getApiUrl(config.endpoints.subscribe) ===> ', config.getApiUrl(config.endpoints.subscribe))
+    console.log('config.getApiUrl(config.endpoints.subscribe) ====> ', config.getApiUrl(config.endpoints.subscribe))
     const response = await axios.get(config.getApiUrl(config.endpoints.subscribe), {
       params: {
         email: form.value.email
