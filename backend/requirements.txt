@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+motor
+pydantic[email]
+python-dotenv
+pymongo
+pydantic-settings
+httpx
+aiosmtplib
+twilio
+apscheduler
+python-telegram-bot
