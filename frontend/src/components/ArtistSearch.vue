@@ -77,6 +77,7 @@
 import { debounce } from 'lodash';
 import axios from 'axios'
 import { ref, watch, onMounted } from 'vue'
+import config from '../config.js'
 
 // Props
 const props = defineProps({
@@ -124,7 +125,7 @@ const performSearch = async () => {
   showDropdown.value = true
 
   try {
-    const response = await axios.get(`http://localhost:8000/api/v1/search_artists`, {
+    const response = await axios.get(config.getApiUrl(config.endpoints.searchArtists), {
       params: { q: searchQuery.value }
     })
 

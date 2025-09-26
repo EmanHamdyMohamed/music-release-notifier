@@ -46,6 +46,7 @@ import { ref } from 'vue'
 import axios from 'axios'
 import MultiSelectDropdown from './ArtistSearch.vue' // your vue-multiselect wrapper
 import { toast } from 'vue3-toastify'
+import config from '../config.js'
 
 const form = ref({
   email: '',
@@ -61,7 +62,8 @@ const getSubscription = async () => {
     return
   }
   try {
-    const response = await axios.get('http://localhost:8000/api/v1/subscribe', {
+    console.log('config.getApiUrl(config.endpoints.subscribe) ===> ', config.getApiUrl(config.endpoints.subscribe))
+    const response = await axios.get(config.getApiUrl(config.endpoints.subscribe), {
       params: {
         email: form.value.email
       }
@@ -100,7 +102,7 @@ const handleSubmit = async () => {
       telegram_chat_id: form.value.telegram_chat_id
     }
     // request subscription api
-    const response = await axios.post('http://localhost:8000/api/v1/subscribe', payload)
+    const response = await axios.post(config.getApiUrl(config.endpoints.subscribe), payload)
     console.log('Response:', response.data)
     // call API with axios
     console.log('Submitting:', payload)
