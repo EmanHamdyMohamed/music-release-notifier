@@ -1,12 +1,13 @@
 from app.core.spotify_client import SpotifyClient
 from app.core.config import settings
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from app.api.v1.routes import subscribe
 from app.services.notifier import check_new_releases_and_notify
 from app.utils.scheduler import scheduler
 from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.mongo import client
 
 
 app = FastAPI(title="Music Release Notifier")
@@ -34,6 +35,14 @@ async def startup_event():
     scheduler.start()
 
 
-@app.get("/health")
+@app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
-    return {"status": "ok"}
+    try:
+        # Test database connection with ping command
+        await client.admin.command('ping')
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"MongoDB connection failed: {e}"
+        )
