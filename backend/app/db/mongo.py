@@ -1,5 +1,4 @@
 import logging
-import os
 from app.core.config import settings
 from motor import motor_asyncio
 
@@ -18,8 +17,7 @@ client = motor_asyncio.AsyncIOMotorClient(
     maxPoolSize=1,  # Reduced for serverless
     minPoolSize=0,  # Reduced for serverless
     maxIdleTimeMS=30000,
-    connect=False,  # Don't connect immediately
-    directConnection=True  # Better for serverless
+    connect=False  # Don't connect immediately
 )
 
 db = client.get_database(settings.database_name)
