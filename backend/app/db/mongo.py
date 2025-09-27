@@ -1,14 +1,9 @@
-# from motor.motor_asyncio import AsyncIOMotorClient
-import motor
+import logging
+
 from app.core.config import settings
 from motor import motor_asyncio
-from app.core.config import settings
 
-print(settings)
-
-# client = motor.motor_asyncio.AsyncIOMotorClient.AsyncIOMotorClient(settings.mongo_uri)
-
-# db = client.get_database(settings.database_name)
+logging.info(settings)
 
 
 client = motor_asyncio.AsyncIOMotorClient(
