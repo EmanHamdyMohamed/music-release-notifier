@@ -1,5 +1,4 @@
 from app.core.spotify_client import SpotifyClient
-from app.core.config import settings
 from fastapi import FastAPI, HTTPException, status
 from app.api.v1.routes import subscribe
 from app.services.notifier import check_new_releases_and_notify
@@ -8,6 +7,8 @@ from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.mongo import client
+from app.middleware.error_handler import ErrorHandler
+from app.middleware.http_middleware import error_handling_middleware
 
 
 app = FastAPI(title="Music Release Notifier")
@@ -20,6 +21,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Add HTTP middleware
+app.middleware("http")(error_handling_middleware)
+
+# Add error handlers
+app.add_exception_handler(HTTPException, ErrorHandler.handle_http_exception)
+app.add_exception_handler(ValueError, ErrorHandler.handle_value_error)
+app.add_exception_handler(ConnectionError, ErrorHandler.handle_connection_error)
+app.add_exception_handler(TimeoutError, ErrorHandler.handle_timeout_error)
+
 
 app.include_router(subscribe.router, prefix="/api/v1")
 app.include_router(spotify_search.router, prefix="/api/v1")
