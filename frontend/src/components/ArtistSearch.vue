@@ -133,7 +133,7 @@ const performSearch = async () => {
       throw new Error(`API request failed with status ${response.status}`)
     }
 
-    const results = response.data
+    const results = response.data?.artists || []
     searchResults.value = results.map(item => ({
       id: item.id,
       name: item.name,
