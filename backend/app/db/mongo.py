@@ -1,11 +1,13 @@
 import logging
+import os
 from app.core.config import settings
 from motor import motor_asyncio
 
+# Log configuration
 logging.info(f"MongoDB URI: {settings.mongo_uri}")
 logging.info(f"Database name: {settings.database_name}")
 
-# Create MongoDB client with better error handling
+# Create MongoDB client optimized for serverless
 client = motor_asyncio.AsyncIOMotorClient(
     settings.mongo_uri,
     serverSelectionTimeoutMS=5000,
@@ -13,10 +15,11 @@ client = motor_asyncio.AsyncIOMotorClient(
     retryWrites=True,
     w="majority",
     replicaSet=None,
-    maxPoolSize=10,
-    minPoolSize=1,
+    maxPoolSize=1,  # Reduced for serverless
+    minPoolSize=0,  # Reduced for serverless
     maxIdleTimeMS=30000,
-    connect=False  # Don't connect immediately
+    connect=False,  # Don't connect immediately
+    directConnection=True  # Better for serverless
 )
 
 db = client.get_database(settings.database_name)
