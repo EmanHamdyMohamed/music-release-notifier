@@ -62,6 +62,7 @@ class ErrorHandler:
     @staticmethod
     async def handle_general_exception(request: Request, exc: Exception) -> JSONResponse:
         """Handle general exceptions"""
+        logging.error(str(exc))
         error_id = f"ERR_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
         
         # Log the error
