@@ -1,21 +1,24 @@
 import logging
+import asyncio
+from typing import Optional
 from app.core.config import settings
 from motor import motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 logger = logging.getLogger(__name__)
 
 # Initialize client and db as None
-client = None
-db = None
+_client: Optional[AsyncIOMotorClient] = None
+_db: Optional[AsyncIOMotorDatabase] = None
 
 
-def get_client():
+def get_client() -> AsyncIOMotorClient:
     """Get MongoDB client, creating it if it doesn't exist"""
-    global client
-    if client is None:
+    global _client
+    if _client is None:
         try:
             logger.info(f"Creating MongoDB client for database: {settings.database_name}")
-            client = motor_asyncio.AsyncIOMotorClient(
+            _client = motor_asyncio.AsyncIOMotorClient(
                 settings.mongo_uri,
                 serverSelectionTimeoutMS=5000,
                 connectTimeoutMS=10000,
@@ -31,17 +34,44 @@ def get_client():
         except Exception as e:
             logger.error(f"Failed to create MongoDB client: {e}")
             raise
-    return client
+    return _client
 
 
-def get_database():
+def get_database() -> AsyncIOMotorDatabase:
     """Get database instance"""
-    global db
-    if db is None:
+    global _db
+    if _db is None:
         client = get_client()
-        db = client.get_database(settings.database_name)
+        _db = client.get_database(settings.database_name)
         logger.info(f"Database instance created: {settings.database_name}")
-    return db
+    return _db
+
+
+async def test_connection() -> bool:
+    """Test database connection with timeout"""
+    try:
+        client = get_client()
+        await asyncio.wait_for(
+            client.admin.command('ping'),
+            timeout=5.0
+        )
+        return True
+    except asyncio.TimeoutError:
+        logger.error("Database connection timeout")
+        return False
+    except Exception as e:
+        logger.error(f"Database connection failed: {e}")
+        return False
+
+
+async def close_connection():
+    """Close database connection"""
+    global _client, _db
+    if _client:
+        _client.close()
+        _client = None
+        _db = None
+        logger.info("Database connection closed")
 
 
 # For backward compatibility, create instances

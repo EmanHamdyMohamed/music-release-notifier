@@ -1,4 +1,4 @@
-from app.db.mongo import get_db
+from app.db.mongo import get_database
 from app.core.spotify_client import SpotifyClient
 from app.services.email_sender import send_email
 from app.services.telegram_sender import send_telegram_message
@@ -30,12 +30,12 @@ async def save_notification(
         matched_artist_ids=matched_artist_ids
     )
 
-    db = await get_db()
+    db = get_database()
     await db.notifications.insert_one(notification_doc.dict())
 
 
 async def check_notifications_sent(notification_method: str, user_email: str, album_id: str):
-    db = await get_db()
+    db = get_database()
     return await db.notifications.find_one({
         "email": user_email,
         "album_id": album_id,
@@ -47,7 +47,7 @@ async def check_new_releases_and_notify():
     logger.info("Checking for new releases... 🎵")
     try:
         # 1. Get all users from the database
-        db = await get_db()
+        db = get_database()
         users = await db.users.find().to_list(length=None)
         print('Users: ', users)
 

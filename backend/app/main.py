@@ -1,16 +1,12 @@
-from app.core.spotify_client import SpotifyClient
 from fastapi import FastAPI, HTTPException, status, Depends
 from app.api.v1.routes import subscribe
-from app.services.notifier import check_new_releases_and_notify
-from app.utils.scheduler import scheduler
 from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.mongo import get_client, get_db
+from app.db.mongo import get_db, test_connection
 from app.middleware.error_handler import ErrorHandler
 from app.middleware.http_middleware import error_handling_middleware
 from motor.motor_asyncio import AsyncIOMotorDatabase
-import asyncio
 import logging
 
 
@@ -40,7 +36,6 @@ app.include_router(subscribe.router, prefix="/api/v1")
 app.include_router(spotify_search.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1/admin")
 
-spotify_client = SpotifyClient()
 
 
 # @app.on_event("startup")
@@ -79,23 +74,21 @@ spotify_client = SpotifyClient()
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 async def health_check():
+    """Health check endpoint with database connectivity test"""
     try:
-        # Test database connection with ping command
-        client = get_client()
-        await asyncio.wait_for(
-            client.admin.command('ping'),
-            timeout=5.0
-        )
-        return {"status": "ok", "database": "connected"}
-    except asyncio.TimeoutError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="MongoDB connection timeout"
-        )
+        # Test database connection
+        is_connected = await test_connection()
+        if is_connected:
+            return {"status": "ok", "database": "connected"}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Database connection failed"
+            )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"MongoDB connection failed: {e}"
+            detail=f"Health check failed: {e}"
         )
 
 
@@ -116,3 +109,13 @@ async def test_database(db: AsyncIOMotorDatabase = Depends(get_db)):
             status_code=500,
             detail=f"Database test error: {e}"
         )
+
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "Music Release Notifier API",
+        "status": "running",
+        "version": "1.0.0"
+    }
