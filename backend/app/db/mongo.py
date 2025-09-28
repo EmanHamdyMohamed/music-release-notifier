@@ -20,20 +20,22 @@ def get_client() -> AsyncIOMotorClient:
             logger.info(f"Creating MongoDB client for database: {settings.database_name}")
             _client = motor_asyncio.AsyncIOMotorClient(
                 settings.mongo_uri,
-                serverSelectionTimeoutMS=5000,
-                connectTimeoutMS=10000,
+                serverSelectionTimeoutMS=3000,  # Reduced for serverless
+                connectTimeoutMS=5000,  # Reduced for serverless
                 retryWrites=True,
                 w="majority",
                 replicaSet=None,
                 maxPoolSize=1,  # Reduced for serverless
                 minPoolSize=0,  # Reduced for serverless
-                maxIdleTimeMS=30000,
-                connect=False  # Don't connect immediately
+                maxIdleTimeMS=10000,  # Reduced for serverless
+                connect=False,  # Don't connect immediately
+                directConnection=False  # Allow connection pooling
             )
             logger.info("MongoDB client created successfully")
         except Exception as e:
             logger.error(f"Failed to create MongoDB client: {e}")
-            raise
+            # Don't raise here to allow the app to start
+            _client = None
     return _client
 
 
@@ -42,6 +44,8 @@ def get_database() -> AsyncIOMotorDatabase:
     global _db
     if _db is None:
         client = get_client()
+        if client is None:
+            raise Exception("MongoDB client not available")
         _db = client.get_database(settings.database_name)
         logger.info(f"Database instance created: {settings.database_name}")
     return _db
