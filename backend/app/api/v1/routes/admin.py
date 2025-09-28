@@ -1,8 +1,6 @@
 from typing import List
-from fastapi import APIRouter, Depends
-from app.db.mongo import get_db
-from app.models.notification import Notification
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from fastapi import APIRouter
+from app.models.beanie_models import Notification
 
 router = APIRouter(tags=["Notifications"])
 
@@ -15,6 +13,6 @@ router = APIRouter(tags=["Notifications"])
     response_description="List of notification documents",
     tags=["Notifications"]
 )
-async def list_notifications(db: AsyncIOMotorDatabase = Depends(get_db)):
-    docs = await db.notifications.find().sort("sent_at", -1).to_list(length=100)
-    return docs
+async def list_notifications():
+    notifications = await Notification.find_all().sort("-sent_at").limit(100).to_list()
+    return notifications

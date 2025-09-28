@@ -3,10 +3,10 @@ from app.api.v1.routes import subscribe
 from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.mongo import get_db, test_connection
+from app.db.beanie_db import init_database, test_connection, get_database
 from app.middleware.error_handler import ErrorHandler
 from app.middleware.http_middleware import error_handling_middleware
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from app.models.beanie_models import User, Notification
 import logging
 
 
@@ -38,38 +38,30 @@ app.include_router(admin.router, prefix="/api/v1/admin")
 
 
 
-# @app.on_event("startup")
-# async def startup_event():
-#     """Application startup event"""
-#     try:
-#         logging.info("Database connection established successfully")
-        
-#         # Schedule check_new_releases_and_notify to run every 1 hour
-#         scheduler.add_job(check_new_releases_and_notify, "interval", hours=1)
-#         scheduler.start()
-#         logging.info("Scheduler started successfully")
-        
-#     except Exception as e:
-#         logging.error(f"Startup error: {e}")
-#         # Don't raise here to allow the app to start even if DB is down
+@app.on_event("startup")
+async def startup_event():
+    """Application startup event"""
+    try:
+        # Initialize Beanie database
+        success = await init_database()
+        if success:
+            logging.info("Beanie database initialized successfully")
+        else:
+            logging.warning("Database initialization failed, but app will continue")
+    except Exception as e:
+        logging.error(f"Startup error: {e}")
+        # Don't raise here to allow the app to start even if DB is down
 
 
-# @app.on_event("shutdown")
-# async def shutdown_event():
-#     """Application shutdown event"""
-#     try:
-#         # Stop scheduler
-#         if scheduler.running:
-#             scheduler.shutdown()
-#             logging.info("Scheduler stopped")
-        
-#         # Close database connection
-#         client = get_client()
-#         client.close()
-#         logging.info("Database connection closed")
-        
-#     except Exception as e:
-#         logging.error(f"Shutdown error: {e}")
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Application shutdown event"""
+    try:
+        from app.db.beanie_db import close_connection
+        await close_connection()
+        logging.info("Database connection closed")
+    except Exception as e:
+        logging.error(f"Shutdown error: {e}")
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
@@ -93,16 +85,16 @@ async def health_check():
 
 
 @app.get("/test/db")
-async def test_database(db: AsyncIOMotorDatabase = Depends(get_db)):
+async def test_database():
     """Test endpoint to verify database operations"""
     try:
-        # Test a simple database operation
-        result = await db.users.find_one({"email": "test@example.com"})
+        # Test a simple database operation with Beanie
+        user_count = await User.count()
         
         return {
             "status": "ok",
             "message": "Database operations working",
-            "result": result is not None
+            "user_count": user_count
         }
     except Exception as e:
         raise HTTPException(

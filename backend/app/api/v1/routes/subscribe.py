@@ -1,12 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
-from app.models.user import UserIn, UserOut
-from app.db.mongo import get_db
+from app.models.beanie_models import User, UserIn, UserOut
 from fastapi import status
 from app.models.user_update import UpdateTelegramID, UpdatePhoneNumber
 from app.models.user_response import UserResponse
 from app.models.response import MessageResponse
-from motor.motor_asyncio import AsyncIOMotorDatabase
+from datetime import datetime
 
 router = APIRouter(tags=["Subscription"])
 
@@ -18,26 +17,32 @@ router = APIRouter(tags=["Subscription"])
     response_description="Confirmation of subscription update",
     status_code=status.HTTP_200_OK,
 )
-async def subscribe(user: UserIn, db: AsyncIOMotorDatabase = Depends(get_db)):
-    existing = await db.users.find_one({"email": user.email})
-    if existing:
-        update_fields = {
-            "subscribed_artists": [a.dict() for a in user.subscribed_artists]
-        }
-        if user.notification_methods:
-            update_fields["notification_methods"] = user.notification_methods
-        if user.telegram_chat_id:
-            update_fields["telegram_chat_id"] = user.telegram_chat_id
-        if user.phone_number:
-            update_fields["phone_number"] = user.phone_number
-
-        await db.users.update_one({"email": user.email}, {
-            "$set": update_fields
-        })
+async def subscribe(user: UserIn):
+    # Check if user exists
+    existing_user = await User.find_one(User.email == user.email)
+    
+    if existing_user:
+        # Update existing user
+        existing_user.subscribed_artists = user.subscribed_artists
+        existing_user.notification_methods = user.notification_methods or []
+        existing_user.telegram_chat_id = user.telegram_chat_id
+        existing_user.phone_number = user.phone_number
+        existing_user.updated_at = datetime.utcnow()
+        
+        await existing_user.save()
+        return JSONResponse(content={"message": "User preferences updated successfully"}, status_code=200)
     else:
-        await db.users.insert_one(user.dict())
-
-    return JSONResponse(content={"message": "Subscription updated"}, status_code=200)
+        # Create new user
+        new_user = User(
+            email=user.email,
+            subscribed_artists=user.subscribed_artists,
+            notification_methods=user.notification_methods or [],
+            telegram_chat_id=user.telegram_chat_id,
+            phone_number=user.phone_number
+        )
+        
+        await new_user.insert()
+        return JSONResponse(content={"message": "User subscribed successfully"}, status_code=201)
 
 
 @router.get(
@@ -49,16 +54,16 @@ async def subscribe(user: UserIn, db: AsyncIOMotorDatabase = Depends(get_db)):
     status_code=status.HTTP_200_OK,
 )
 async def get_subscribe(
-    email: str = Query(description="The user's email address"),
-    db: AsyncIOMotorDatabase = Depends(get_db)
+    email: str = Query(description="The user's email address")
 ):
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
-    existing = await db.users.find_one({"email": email})
-    if not existing:
+    
+    user = await User.find_one(User.email == email)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return UserOut(**existing)
+    return UserOut.from_user(user)
 
 
 @router.post(
@@ -72,14 +77,14 @@ async def get_subscribe(
         404: {"description": "User not found"},
     },
 )
-async def update_telegram_id(data: UpdateTelegramID, db: AsyncIOMotorDatabase = Depends(get_db)):
-    result = await db.users.update_one(
-        {"email": data.email},
-        {"$set": {"telegram_chat_id": data.telegram_chat_id}}
-    )
-
-    if result.matched_count == 0:
+async def update_telegram_id(data: UpdateTelegramID):
+    user = await User.find_one(User.email == data.email)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    user.telegram_chat_id = data.telegram_chat_id
+    user.updated_at = datetime.utcnow()
+    await user.save()
 
     return JSONResponse(content={"message": "Telegram ID updated successfully"}, status_code=200)
 
@@ -95,12 +100,13 @@ async def update_telegram_id(data: UpdateTelegramID, db: AsyncIOMotorDatabase = 
         404: {"description": "User not found"},
     },
 )
-async def update_phone_number(data: UpdatePhoneNumber, db: AsyncIOMotorDatabase = Depends(get_db)):
-    result = await db.users.update_one(
-        {"email": data.email},
-        {"$set": {"phone_number": data.phone_number}}
-    )
-
-    if result.matched_count == 0:
+async def update_phone_number(data: UpdatePhoneNumber):
+    user = await User.find_one(User.email == data.email)
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
+
+    user.phone_number = data.phone_number
+    user.updated_at = datetime.utcnow()
+    await user.save()
+
     return JSONResponse(content={"message": "Phone number updated successfully"}, status_code=200)

@@ -1,4 +1,4 @@
-from app.db.mongo import get_database
+from app.models.beanie_models import User, Notification
 from app.core.spotify_client import SpotifyClient
 from app.services.email_sender import send_email
 from app.services.telegram_sender import send_telegram_message
@@ -30,25 +30,35 @@ async def save_notification(
         matched_artist_ids=matched_artist_ids
     )
 
-    db = get_database()
-    await db.notifications.insert_one(notification_doc.dict())
+    # Create notification document
+    notification = Notification(
+        email=notification_doc.email,
+        album_id=notification_doc.album_id,
+        album_name=notification_doc.album_name,
+        album_artists_ids=notification_doc.album_artists_ids,
+        method=notification_doc.method,
+        spotify_url=notification_doc.spotify_url,
+        telegram_chat_id=notification_doc.telegram_chat_id,
+        phone_number=notification_doc.phone_number,
+        matched_artist_ids=notification_doc.matched_artist_ids
+    )
+    await notification.insert()
 
 
 async def check_notifications_sent(notification_method: str, user_email: str, album_id: str):
-    db = get_database()
-    return await db.notifications.find_one({
+    notification = await Notification.find_one({
         "email": user_email,
         "album_id": album_id,
         "method": notification_method
-    }) is not None
+    })
+    return notification is not None
 
 
 async def check_new_releases_and_notify():
     logger.info("Checking for new releases... 🎵")
     try:
         # 1. Get all users from the database
-        db = get_database()
-        users = await db.users.find().to_list(length=None)
+        users = await User.find_all().to_list()
         print('Users: ', users)
 
         # 2. Get latest Spotify releases
