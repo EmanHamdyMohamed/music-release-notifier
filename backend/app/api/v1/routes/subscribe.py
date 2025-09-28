@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
-from app.models.beanie_models import User, UserIn, UserOut
+from app.models.mongoengine_models import User
+from app.schema.user import UserIn, UserOut
 from fastapi import status
 from app.models.user_update import UpdateTelegramID, UpdatePhoneNumber
 from app.models.user_response import UserResponse
@@ -19,7 +20,7 @@ router = APIRouter(tags=["Subscription"])
 )
 async def subscribe(user: UserIn):
     # Check if user exists
-    existing_user = await User.find_one({"email": user.email})
+    existing_user = User.objects(email=user.email).first()
     
     if existing_user:
         # Update existing user
@@ -27,9 +28,8 @@ async def subscribe(user: UserIn):
         existing_user.notification_methods = user.notification_methods or []
         existing_user.telegram_chat_id = user.telegram_chat_id
         existing_user.phone_number = user.phone_number
-        existing_user.updated_at = datetime.utcnow()
         
-        await existing_user.save()
+        existing_user.save()
         return JSONResponse(content={"message": "User preferences updated successfully"}, status_code=200)
     else:
         # Create new user
@@ -41,7 +41,7 @@ async def subscribe(user: UserIn):
             phone_number=user.phone_number
         )
         
-        await new_user.insert()
+        new_user.save()
         return JSONResponse(content={"message": "User subscribed successfully"}, status_code=201)
 
 
@@ -59,7 +59,8 @@ async def get_subscribe(
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
     
-    user = await User.find_one({"email": email})
+    user = User.objects(email=email).first()
+    print('user ====> ', user)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -78,7 +79,7 @@ async def get_subscribe(
     },
 )
 async def update_telegram_id(data: UpdateTelegramID):
-    user = await User.find_one({"email": data.email})
+    user = User.objects(email=data.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -101,7 +102,7 @@ async def update_telegram_id(data: UpdateTelegramID):
     },
 )
 async def update_phone_number(data: UpdatePhoneNumber):
-    user = await User.find_one({"email": data.email})
+    user = User.objects(email=data.email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

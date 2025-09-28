@@ -1,18 +1,19 @@
 from typing import List
 from fastapi import APIRouter
-from app.models.beanie_models import Notification
+from app.models.mongoengine_models import Notification
+from app.schema.notification import NotificationOut
 
 router = APIRouter(tags=["Notifications"])
 
 
 @router.get(
     "/notifications",
-    response_model=List[Notification],
+    response_model=List[NotificationOut],
     summary="List recent notifications",
     description="Retrieve the latest 100 notifications sent to users, sorted by most recent first.",
     response_description="List of notification documents",
     tags=["Notifications"]
 )
 async def list_notifications():
-    notifications = await Notification.find_all().sort("-sent_at").limit(100).to_list()
-    return notifications
+    notifications = Notification.objects.order_by('-sent_at').limit(100)
+    return list(notifications)

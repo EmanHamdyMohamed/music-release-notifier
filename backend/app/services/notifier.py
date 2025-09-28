@@ -1,4 +1,4 @@
-from app.models.beanie_models import User, Notification
+from app.models.mongoengine_models import User, Notification
 from app.core.spotify_client import SpotifyClient
 from app.services.email_sender import send_email
 from app.services.telegram_sender import send_telegram_message
@@ -42,15 +42,15 @@ async def save_notification(
         phone_number=notification_doc.phone_number,
         matched_artist_ids=notification_doc.matched_artist_ids
     )
-    await notification.insert()
+    notification.save()
 
 
 async def check_notifications_sent(notification_method: str, user_email: str, album_id: str):
-    notification = await Notification.find_one({
-        "email": user_email,
-        "album_id": album_id,
-        "method": notification_method
-    })
+    notification = Notification.objects(
+        email=user_email,
+        album_id=album_id,
+        method=notification_method
+    ).first()
     return notification is not None
 
 
@@ -58,7 +58,7 @@ async def check_new_releases_and_notify():
     logger.info("Checking for new releases... 🎵")
     try:
         # 1. Get all users from the database
-        users = await User.find_all().to_list()
+        users = list(User.objects.all())
         print('Users: ', users)
 
         # 2. Get latest Spotify releases

@@ -1,13 +1,14 @@
-from fastapi import FastAPI, HTTPException, status, Depends
+from fastapi import FastAPI, HTTPException, status
 from app.api.v1.routes import subscribe
 from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.beanie_db import init_database, test_connection, get_database
+from app.db.mongoengine_db import init_database, test_connection
 from app.middleware.error_handler import ErrorHandler
 from app.middleware.http_middleware import error_handling_middleware
-from app.models.beanie_models import User, Notification
+from app.models.mongoengine_models import User
 import logging
+
 
 
 app = FastAPI(title="Music Release Notifier")
@@ -42,10 +43,10 @@ app.include_router(admin.router, prefix="/api/v1/admin")
 async def startup_event():
     """Application startup event"""
     try:
-        # Initialize Beanie database
-        success = await init_database()
+        # Initialize MongoEngine database
+        success = init_database()
         if success:
-            logging.info("Beanie database initialized successfully")
+            logging.info("MongoEngine database initialized successfully")
         else:
             logging.warning("Database initialization failed, but app will continue")
     except Exception as e:
@@ -57,8 +58,8 @@ async def startup_event():
 async def shutdown_event():
     """Application shutdown event"""
     try:
-        from app.db.beanie_db import close_connection
-        await close_connection()
+        from app.db.mongoengine_db import close_connection
+        close_connection()
         logging.info("Database connection closed")
     except Exception as e:
         logging.error(f"Shutdown error: {e}")
@@ -88,8 +89,8 @@ async def health_check():
 async def test_database():
     """Test endpoint to verify database operations"""
     try:
-        # Test a simple database operation with Beanie
-        user_count = await User.count()
+        # Test a simple database operation with MongoEngine
+        user_count = User.objects.count()
         
         return {
             "status": "ok",
