@@ -9,3 +9,4 @@ httpx==0.28.1
 aiosmtplib==4.0.1
 twilio==9.5.2
 python-telegram-bot==22.0
+apscheduler==3.11.0
