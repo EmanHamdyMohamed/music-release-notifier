@@ -9,7 +9,7 @@ from app.middleware.http_middleware import error_handling_middleware
 from app.models.mongoengine_models import User
 import logging
 
-
+init_database()
 
 app = FastAPI(title="Music Release Notifier")
 
