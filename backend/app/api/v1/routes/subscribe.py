@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import JSONResponse
-from app.models.mongoengine_models import User
+from app.models.mongoengine_models import User, ArtistSubscription as MongoEngineArtistSubscription
 from app.schema.user import UserIn, UserOut
 from fastapi import status
 from app.models.user_update import UpdateTelegramID, UpdatePhoneNumber
@@ -22,9 +22,18 @@ async def subscribe(user: UserIn):
     # Check if user exists
     existing_user = User.objects(email=user.email).first()
     
+    # Convert Pydantic ArtistSubscription to MongoEngine ArtistSubscription
+    mongoengine_artists = [
+        MongoEngineArtistSubscription(
+            id=artist.id,
+            name=artist.name or "",
+            url=artist.url
+        ) for artist in (user.subscribed_artists or [])
+    ]
+    
     if existing_user:
         # Update existing user
-        existing_user.subscribed_artists = user.subscribed_artists
+        existing_user.subscribed_artists = mongoengine_artists
         existing_user.notification_methods = user.notification_methods or []
         existing_user.telegram_chat_id = user.telegram_chat_id
         existing_user.phone_number = user.phone_number
@@ -35,7 +44,7 @@ async def subscribe(user: UserIn):
         # Create new user
         new_user = User(
             email=user.email,
-            subscribed_artists=user.subscribed_artists,
+            subscribed_artists=mongoengine_artists,
             notification_methods=user.notification_methods or [],
             telegram_chat_id=user.telegram_chat_id,
             phone_number=user.phone_number

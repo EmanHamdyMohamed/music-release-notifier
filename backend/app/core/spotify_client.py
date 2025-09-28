@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 
 logger = get_logger(__name__)
 
+
 class SpotifyClient:
     def __init__(self):
         self.client_id = settings.spotify_client_id
@@ -93,7 +94,8 @@ class SpotifyClient:
             {
                 "name": item["name"],
                 "id": item["id"],
-                "image": item["images"][0]["url"] if item["images"] and len(item["images"]) > 0 else None
+                "popularity": item['popularity'],
+                "image_url": item["images"][0]["url"] if (item["images"] and len(item["images"]) > 0) else None
             }
             for item in data["artists"]["items"]
         ]

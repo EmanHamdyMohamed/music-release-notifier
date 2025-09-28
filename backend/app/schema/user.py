@@ -15,7 +15,7 @@ class ArtistSubscription(BaseModel):
 class UserIn(BaseModel):
     """User input model for API"""
     email: EmailStr = Field(example="user@example.com")
-    subscribed_artists: Optional[List[ArtistSubscription]] = Field()
+    subscribed_artists: Optional[List[ArtistSubscription]] = Field(default=[])
     notification_methods: Optional[List[str]] = Field(default=[], example=["telegram", "sms"])
     telegram_chat_id: Optional[str] = Field(default=None, example="123456789")
     phone_number: Optional[str] = Field(default=None, example="+201234567890")
