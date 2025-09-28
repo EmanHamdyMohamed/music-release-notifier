@@ -47,9 +47,6 @@ spotify_client = SpotifyClient()
 async def startup_event():
     """Application startup event"""
     try:
-        # Test database connection
-        client = get_client()
-        await client.admin.command('ping')
         logging.info("Database connection established successfully")
         
         # Schedule check_new_releases_and_notify to run every 1 hour
