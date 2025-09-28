@@ -19,7 +19,7 @@ router = APIRouter(tags=["Subscription"])
 )
 async def subscribe(user: UserIn):
     # Check if user exists
-    existing_user = await User.find_one(User.email == user.email)
+    existing_user = await User.find_one({"email": user.email})
     
     if existing_user:
         # Update existing user
@@ -59,7 +59,7 @@ async def get_subscribe(
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
     
-    user = await User.find_one(User.email == email)
+    user = await User.find_one({"email": email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -78,7 +78,7 @@ async def get_subscribe(
     },
 )
 async def update_telegram_id(data: UpdateTelegramID):
-    user = await User.find_one(User.email == data.email)
+    user = await User.find_one({"email": data.email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -101,7 +101,7 @@ async def update_telegram_id(data: UpdateTelegramID):
     },
 )
 async def update_phone_number(data: UpdatePhoneNumber):
-    user = await User.find_one(User.email == data.email)
+    user = await User.find_one({"email": data.email})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
