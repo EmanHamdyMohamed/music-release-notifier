@@ -1,5 +1,4 @@
 // API Configuration
-console.log('import.meta.env.VITE_API_BASE_URL ===> ', import.meta.env.VITE_API_BASE_URL);
 const config = {
   // API Base URL - can be overridden by environment variables
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/',
@@ -13,7 +12,6 @@ const config = {
   
   // Helper function to get full API URL
   getApiUrl: (endpoint) => {
-    debugger
     return `${config.apiBaseUrl}${endpoint}`;
   }
 };

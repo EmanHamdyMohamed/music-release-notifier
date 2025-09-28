@@ -1,15 +1,15 @@
 from app.core.spotify_client import SpotifyClient
-from app.core.config import settings
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Depends
 from app.api.v1.routes import subscribe
 from app.services.notifier import check_new_releases_and_notify
 from app.utils.scheduler import scheduler
 from app.api.v1.routes import admin
 from app.api.v1.routes import spotify_search
 from fastapi.middleware.cors import CORSMiddleware
-from app.db.mongo import client
+from app.db.mongo import get_client, get_db
 from app.middleware.error_handler import ErrorHandler
 from app.middleware.http_middleware import error_handling_middleware
+from motor.motor_asyncio import AsyncIOMotorDatabase
 import asyncio
 import logging
 
@@ -48,6 +48,7 @@ async def startup_event():
     """Application startup event"""
     try:
         # Test database connection
+        client = get_client()
         await client.admin.command('ping')
         logging.info("Database connection established successfully")
         
@@ -71,6 +72,7 @@ async def shutdown_event():
             logging.info("Scheduler stopped")
         
         # Close database connection
+        client = get_client()
         client.close()
         logging.info("Database connection closed")
         
@@ -82,6 +84,7 @@ async def shutdown_event():
 async def health_check():
     try:
         # Test database connection with ping command
+        client = get_client()
         await asyncio.wait_for(
             client.admin.command('ping'),
             timeout=5.0
@@ -100,11 +103,9 @@ async def health_check():
 
 
 @app.get("/test/db")
-async def test_database():
+async def test_database(db: AsyncIOMotorDatabase = Depends(get_db)):
     """Test endpoint to verify database operations"""
     try:
-        from app.db.mongo import db
-        
         # Test a simple database operation
         result = await db.users.find_one({"email": "test@example.com"})
         

@@ -1,7 +1,8 @@
 from typing import List
-from fastapi import APIRouter
-from app.db.mongo import db
+from fastapi import APIRouter, Depends
+from app.db.mongo import get_db
 from app.models.notification import Notification
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 router = APIRouter(tags=["Notifications"])
 
@@ -14,6 +15,6 @@ router = APIRouter(tags=["Notifications"])
     response_description="List of notification documents",
     tags=["Notifications"]
 )
-async def list_notifications():
+async def list_notifications(db: AsyncIOMotorDatabase = Depends(get_db)):
     docs = await db.notifications.find().sort("sent_at", -1).to_list(length=100)
     return docs

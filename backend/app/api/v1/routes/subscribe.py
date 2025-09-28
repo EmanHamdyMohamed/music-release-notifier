@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from app.models.user import UserIn, UserOut
-from app.db.mongo import db
+from app.db.mongo import get_db
 from fastapi import status
 from app.models.user_update import UpdateTelegramID, UpdatePhoneNumber
 from app.models.user_response import UserResponse
 from app.models.response import MessageResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 router = APIRouter(tags=["Subscription"])
 
@@ -17,7 +18,7 @@ router = APIRouter(tags=["Subscription"])
     response_description="Confirmation of subscription update",
     status_code=status.HTTP_200_OK,
 )
-async def subscribe(user: UserIn):
+async def subscribe(user: UserIn, db: AsyncIOMotorDatabase = Depends(get_db)):
     existing = await db.users.find_one({"email": user.email})
     if existing:
         update_fields = {
@@ -47,7 +48,10 @@ async def subscribe(user: UserIn):
     response_model=UserResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_subscribe(email: str = Query(description="The user's email address")):
+async def get_subscribe(
+    email: str = Query(description="The user's email address"),
+    db: AsyncIOMotorDatabase = Depends(get_db)
+):
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
     existing = await db.users.find_one({"email": email})
@@ -68,7 +72,7 @@ async def get_subscribe(email: str = Query(description="The user's email address
         404: {"description": "User not found"},
     },
 )
-async def update_telegram_id(data: UpdateTelegramID):
+async def update_telegram_id(data: UpdateTelegramID, db: AsyncIOMotorDatabase = Depends(get_db)):
     result = await db.users.update_one(
         {"email": data.email},
         {"$set": {"telegram_chat_id": data.telegram_chat_id}}
@@ -91,7 +95,7 @@ async def update_telegram_id(data: UpdateTelegramID):
         404: {"description": "User not found"},
     },
 )
-async def update_phone_number(data: UpdatePhoneNumber):
+async def update_phone_number(data: UpdatePhoneNumber, db: AsyncIOMotorDatabase = Depends(get_db)):
     result = await db.users.update_one(
         {"email": data.email},
         {"$set": {"phone_number": data.phone_number}}
