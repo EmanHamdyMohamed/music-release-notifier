@@ -43,38 +43,38 @@ app.include_router(admin.router, prefix="/api/v1/admin")
 spotify_client = SpotifyClient()
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event"""
-    try:
-        logging.info("Database connection established successfully")
+# @app.on_event("startup")
+# async def startup_event():
+#     """Application startup event"""
+#     try:
+#         logging.info("Database connection established successfully")
         
-        # Schedule check_new_releases_and_notify to run every 1 hour
-        scheduler.add_job(check_new_releases_and_notify, "interval", hours=1)
-        scheduler.start()
-        logging.info("Scheduler started successfully")
+#         # Schedule check_new_releases_and_notify to run every 1 hour
+#         scheduler.add_job(check_new_releases_and_notify, "interval", hours=1)
+#         scheduler.start()
+#         logging.info("Scheduler started successfully")
         
-    except Exception as e:
-        logging.error(f"Startup error: {e}")
-        # Don't raise here to allow the app to start even if DB is down
+#     except Exception as e:
+#         logging.error(f"Startup error: {e}")
+#         # Don't raise here to allow the app to start even if DB is down
 
 
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Application shutdown event"""
-    try:
-        # Stop scheduler
-        if scheduler.running:
-            scheduler.shutdown()
-            logging.info("Scheduler stopped")
+# @app.on_event("shutdown")
+# async def shutdown_event():
+#     """Application shutdown event"""
+#     try:
+#         # Stop scheduler
+#         if scheduler.running:
+#             scheduler.shutdown()
+#             logging.info("Scheduler stopped")
         
-        # Close database connection
-        client = get_client()
-        client.close()
-        logging.info("Database connection closed")
+#         # Close database connection
+#         client = get_client()
+#         client.close()
+#         logging.info("Database connection closed")
         
-    except Exception as e:
-        logging.error(f"Shutdown error: {e}")
+#     except Exception as e:
+#         logging.error(f"Shutdown error: {e}")
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
