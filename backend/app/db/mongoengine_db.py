@@ -23,7 +23,6 @@ def init_database():
         # Connect to MongoDB using MongoEngine
         allow_invalid_host_cert = "true"
         read_preference = 'primaryPreferred'
-        print('jjjjjjjjjjjjjjjjjj')
         connect(
             host=f"{settings.mongo_uri}/{settings.database_name}"
                 "?retryWrites=true&w=majority&serverSelectionTimeoutMS=10000"

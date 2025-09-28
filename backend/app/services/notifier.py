@@ -4,7 +4,6 @@ from app.services.email_sender import send_email
 from app.services.telegram_sender import send_telegram_message
 from app.services.sms_sender import send_sms
 from app.utils.logger import get_logger
-from app.models.notification import Notification
 import textwrap
 
 logger = get_logger(__name__)

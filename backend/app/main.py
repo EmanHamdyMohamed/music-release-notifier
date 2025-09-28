@@ -7,6 +7,8 @@ from app.db.mongoengine_db import init_database, test_connection
 from app.middleware.error_handler import ErrorHandler
 from app.middleware.http_middleware import error_handling_middleware
 from app.models.mongoengine_models import User
+from app.services.notifier import check_new_releases_and_notify
+from app.utils.scheduler import scheduler
 import logging
 
 init_database()
@@ -63,6 +65,12 @@ async def shutdown_event():
         logging.info("Database connection closed")
     except Exception as e:
         logging.error(f"Shutdown error: {e}")
+        
+@app.on_event("startup")
+async def startup_event():
+    # Schedule check_new_releases_and_notify to run every 1 hour
+    scheduler.add_job(check_new_releases_and_notify, "interval", hours=1)
+    scheduler.start()
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
