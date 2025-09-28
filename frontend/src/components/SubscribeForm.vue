@@ -95,7 +95,8 @@ const handleSubmit = async () => {
       email: form.value.email,
       subscribed_artists: form.value.subscribed_artists.map(a => ({
         id: a.id,
-        name: a.name
+        name: a.name,
+        url: a.url || ''
       })),
       notification_methods: form.value.notification_methods,
       phone_number: form.value.phone_number,

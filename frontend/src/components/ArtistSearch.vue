@@ -4,7 +4,7 @@
     <div v-if="selectedItems.length > 0" class="flex flex-wrap gap-2 mb-2">
       <span v-for="(item, index) in selectedItems" :key="item.id"
         class="inline-flex items-center bg-gray-200 rounded-full px-3 py-1 text-sm font-medium text-gray-700">
-        <img v-if="item.image" :src="item.image" :alt="item.name" class="w-5 h-5 rounded-full mr-2 object-cover">
+        <img v-if="item.image_url" :src="item.image_url" :alt="item.name" class="w-5 h-5 rounded-full mr-2 object-cover">
         {{ item.name }}
         <button @click="removeItem(index)" class="ml-2 text-gray-500 hover:text-gray-700 focus:outline-none"
           aria-label="Remove item">
@@ -37,7 +37,7 @@
       }" class="cursor-default select-none relative py-2 pl-3 pr-9 hover:bg-gray-700">
         <div class="flex justify-start mb-3">
           <!-- Image thumbnail -->
-          <img v-if="item.image" :src="item.image" :alt="item.name" width="30" height="30"
+          <img v-if="item.image_url" :src="item.image_url" :alt="item.name" width="30" height="30"
             class="rounded-full object-cover">
           <!-- Fallback avatar if no image -->
           <div v-else
@@ -137,8 +137,9 @@ const performSearch = async () => {
     searchResults.value = results.map(item => ({
       id: item.id,
       name: item.name,
-      image: item.image,
-      raw: item
+      image_url: item.image_url,
+      raw: item,
+      url: item.url
     }))
 
   } catch (error) {
